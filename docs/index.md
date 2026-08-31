@@ -3,7 +3,7 @@
  <h1> Website Markup Language Specification Consortium </h1>
 </div>
 
-[Homepage](index.md) | [About WSC](info.md) | [Drafts](drafts.md) | [Languages](languages.md) | [Staff](staff.md)
+[Homepage](index.md) | [About WSC](about.md) | [Drafts](drafts.md) | [Languages](languages.md) | [Staff](staff.md)
 
 ## About Us
 The Website Markup Language Specification Consortium (WSC) is an independent standards body 
