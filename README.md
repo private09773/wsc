@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # WSC WML 0.3 Repository
 
 This is the official repository for WML (Website Markup Language) 0.3. 
@@ -93,3 +94,7 @@ Future Versions are being currently developed.
 
 </wml>
 ```
+=======
+# wsc-website
+Website for WML Specification Consortium
+>>>>>>> 0cbc5cf822ce490f5c798a3a0ea23344df3e81e7
