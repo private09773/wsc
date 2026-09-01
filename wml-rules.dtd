@@ -1,0 +1,439 @@
+<!--
+    WML (Website Markup Language)
+    Version: WML Alpha 0.5
+
+    Changes since Alpha 0.4:
+      - table, meta, link are back with real element declarations
+        (previously referenced but never declared, since Alpha 1).
+      - style is renamed stylesheet; script is renamed javascript —
+        both are back with real declarations under their new names.
+      - hr and fieldset remain phased out; <line> replaces hr, and
+        fieldset has no WML-native replacement yet.
+      - Added: title, a real, properly-declared head element (one per
+        document) — this was also a long-standing gap since Alpha 1.
+      - Parsing is now "forgiving": WML remains XML at its core (this
+        DTD, well-formedness, etc. still apply), but a conforming WML
+        processor should tolerate common author slips — a missing
+        closing "?>" on the XML declaration, an unclosed tag whose
+        parent closes around it, or a missing trailing slash on a
+        self-closing element — rather than hard-failing outright.
+        Strict XML remains the target output of any WML compiler;
+        "forgiving" describes how the compiler treats imperfect
+        input, not a change to the grammar itself.
+
+    wml is a markup language derived from HTML 4.01 Strict.
+    It reuses the vast majority of the HTML 4.01 Strict element and
+    attribute set as its foundation, and adds a small number of new,
+    wml-native elements and attributes for declarative state, binding,
+    looping, conditionals, routing, and component composition — none
+    of which exist in HTML 4.01 or HTML5.
+
+    =====================================================================
+    CREDIT / DERIVATION NOTICE
+
+    This document is derived from the HTML 4.01 Strict DTD published
+    by the World Wide Web Consortium (W3C). The original HTML 4.01
+    DTD and its structuring (parameter entities, content models,
+    core/i18n/event attribute groups, etc.) were authored by:
+
+        Dave Raggett   <dsr@w3.org>
+        Arnaud Le Hors <lehors@w3.org>
+        Ian Jacobs     <ij@w3.org>
+
+    Original specification: http://www.w3.org/TR/1999/REC-html401-19991224
+    Original DTD draft date: $Date: 2018/04/05 15:13:09 $
+
+    wml extensions, new elements/attributes, and versioning added by:
+        Website Markup Language Specification Consortum (WSC),
+
+    This is not an official W3C document and is not endorsed by W3C.
+    It is an independent derivative work created under fair-use
+    adaptation of a public specification for the purpose of building
+    a new, separate markup language.
+    =====================================================================
+-->
+
+<!--================== Imported Names (inherited from HTML 4.01) ========-->
+
+<!ENTITY % ContentType "CDATA"  -- media type, as per [RFC2045] -->
+<!ENTITY % ContentTypes "CDATA" -- comma-separated list of media types -->
+<!ENTITY % Charset "CDATA"      -- a character encoding, as per [RFC2045] -->
+<!ENTITY % Charsets "CDATA"     -- space-separated list of character encodings -->
+<!ENTITY % LanguageCode "NAME"  -- a language code, as per [RFC1766] -->
+<!ENTITY % Character "CDATA"    -- a single character from [ISO10646] -->
+<!ENTITY % LinkTypes "CDATA"    -- space-separated list of link types -->
+<!ENTITY % MediaDesc "CDATA"    -- single or comma-separated list of media descriptors -->
+<!ENTITY % URI "CDATA"          -- a Uniform Resource Identifier, see [URI] -->
+<!ENTITY % Datetime "CDATA"     -- date and time information, ISO format -->
+<!ENTITY % Script "CDATA"       -- script expression -->
+<!ENTITY % StyleSheet "CDATA"   -- style sheet data -->
+<!ENTITY % Text "CDATA">
+<!ENTITY % Length "CDATA"       -- nn for pixels or nn% for percentage length -->
+<!ENTITY % Pixels "CDATA"       -- integer representing length in pixels -->
+
+<!-- Parameter Entities -->
+<!ENTITY % head.misc "object|imp|theme|title|meta|link|stylesheet|javascript"
+    -- Alpha 0.5: meta, link, stylesheet (renamed from style) and
+       javascript (renamed from script) are back, now with real
+       declarations instead of dangling references. -->
+<!ENTITY % heading "h1|h2|h3|h4|h5|h6">
+<!ENTITY % list "ul | ol">
+<!ENTITY % preformatted "pre">
+
+<!--================ Character mnemonic entities =========================-->
+
+<!ENTITY % HTMLlat1 PUBLIC
+   "-//W3C//ENTITIES Latin1//EN//HTML"
+   "HTMLlat1.ent">
+%HTMLlat1;
+
+<!ENTITY % HTMLsymbol PUBLIC
+   "-//W3C//ENTITIES Symbols//EN//HTML"
+   "HTMLsymbol.ent">
+%HTMLsymbol;
+
+<!ENTITY % HTMLspecial PUBLIC
+   "-//W3C//ENTITIES Special//EN//HTML"
+   "HTMLspecial.ent">
+%HTMLspecial;
+
+<!--=================== Generic Attributes ===============================-->
+
+<!ENTITY % coreattrs
+ "id          ID             #IMPLIED  -- document-wide unique id --
+  class       CDATA          #IMPLIED  -- space-separated list of classes --
+  style       %StyleSheet;   #IMPLIED  -- associated style info --
+  title       %Text;         #IMPLIED  -- advisory title --"
+  >
+
+<!ENTITY % i18n
+ "lang        %LanguageCode; #IMPLIED  -- language code --
+  dir         (ltr|rtl)      #IMPLIED  -- direction for weak/neutral text --"
+  >
+
+<!ENTITY % events
+ "onclick     %Script;       #IMPLIED
+  ondblclick  %Script;       #IMPLIED
+  onmousedown %Script;       #IMPLIED
+  onmouseup   %Script;       #IMPLIED
+  onmouseover %Script;       #IMPLIED
+  onmousemove %Script;       #IMPLIED
+  onmouseout  %Script;       #IMPLIED
+  onkeypress  %Script;       #IMPLIED
+  onkeydown   %Script;       #IMPLIED
+  onkeyup     %Script;       #IMPLIED"
+  >
+
+<!--=================== wml-NATIVE ATTRIBUTES (new in wml) ===============
+    These are new global attributes, not present in HTML 4 or HTML5.
+    They may be applied to any element and give declarative reactivity
+    without requiring inline or external script.
+-->
+
+<!ENTITY % wmlattrs
+ "wml-if      CDATA          #IMPLIED  -- name of a state condition; element
+                                          renders only while the condition
+                                          is truthy --
+  wml-bind    CDATA          #IMPLIED  -- name of a state variable whose
+                                          value is kept in sync with this
+                                          element's text content or value --
+  wml-repeat  CDATA          #IMPLIED  -- name of a state list; element is
+                                          repeated once per list item --
+  wml-as      CDATA          #IMPLIED  -- local variable name bound to the
+                                          current item when wml-repeat is used --"
+  >
+
+<!ENTITY % attrs "%coreattrs; %i18n; %events; %wmlattrs;">
+
+<!--=================== Text Markup (inherited from HTML 4.01) ==========-->
+
+<!ENTITY % fontstyle "tt | i | b | big | small">
+<!ENTITY % phrase "em | strong | dfn | code |
+                   samp | kbd | var | cite | abbr | acronym" >
+<!ENTITY % special
+   "a | img | object | br | break | javascript | map | q | sub | sup | span | bdo | slot">
+<!ENTITY % formctrl "input | select | textarea | label | button | checkbox">
+
+<!ENTITY % inline "#PCDATA | %fontstyle; | %phrase; | %special; | %formctrl;">
+
+<!ELEMENT (%fontstyle;|%phrase;) - - (%inline;)*>
+<!ATTLIST (%fontstyle;|%phrase;) %attrs;>
+
+<!ELEMENT (sub|sup) - - (%inline;)*>
+<!ATTLIST (sub|sup) %attrs;>
+
+<!ELEMENT span - - (%inline;)*>
+<!ATTLIST span %attrs;>
+
+<!ELEMENT bdo - - (%inline;)*>
+<!ATTLIST bdo
+  %coreattrs;
+  lang        %LanguageCode; #IMPLIED
+  dir         (ltr|rtl)      #REQUIRED
+  >
+
+<!ELEMENT br - O EMPTY>
+<!ATTLIST br %coreattrs;>
+
+<!--================== HTML content models (inherited) ===================-->
+
+<!ENTITY % block
+     "p | %heading; | %list; | %preformatted; | dl | div | noscript |
+      blockquote | form | line | table | address |
+      comp | state | bind | rep | if | route"
+    -- Alpha 0.5: table is back with a simplified WML table model.
+       hr and fieldset remain phased out; <line> replaces hr. -->
+
+<!ENTITY % flow "%block; | %inline;">
+
+<!--=================== Document Body =====================================-->
+
+<!ELEMENT body O O (%block;|javascript)+ +(ins|del)>
+<!ATTLIST body
+  %attrs;
+  onload          %Script;   #IMPLIED
+  onunload        %Script;   #IMPLIED
+  >
+
+<!ELEMENT address - - (%inline;)*>
+<!ATTLIST address %attrs;>
+
+<!ELEMENT div - - (%flow;)*>
+<!ATTLIST div %attrs;>
+
+<!--================== The Anchor Element (inherited) =====================-->
+
+<!ENTITY % Shape "(rect|circle|poly|default)">
+<!ENTITY % Coords "CDATA">
+
+<!ELEMENT a - - (%inline;)* -(a)>
+<!ATTLIST a
+  %attrs;
+  charset     %Charset;      #IMPLIED
+  type        %ContentType;  #IMPLIED
+  name        CDATA          #IMPLIED
+  href        %URI;          #IMPLIED
+  hreflang    %LanguageCode; #IMPLIED
+  rel         %LinkTypes;    #IMPLIED
+  rev         %LinkTypes;    #IMPLIED
+  accesskey   %Character;    #IMPLIED
+< truncated lines 220-297 >
+  %coreattrs;
+  name        CDATA          #REQUIRED -- unique component name --
+  >
+
+<!-- use: instantiates a previously declared comp -->
+<!ELEMENT use - O EMPTY>
+<!ATTLIST use
+  %coreattrs;
+  component   CDATA          #REQUIRED -- name of comp to render --
+  >
+
+<!-- slot: a named injection point inside a comp, filled by content
+     passed in at the use site -->
+<!ELEMENT slot - O (%inline;)*>
+<!ATTLIST slot
+  %coreattrs;
+  name        CDATA          "default"
+  >
+
+<!-- state: declares a piece of reactive, page-local state. Elements can
+     read/write it via wml-bind / wml-if / wml-repeat, or bind actions
+     can mutate it — all without authoring script. -->
+<!ELEMENT state - O EMPTY>
+<!ATTLIST state
+  %coreattrs;
+  name        CDATA          #REQUIRED
+  type        (string|number|boolean|list) string
+  value       CDATA          #IMPLIED  -- initial value --
+  >
+
+<!-- bind: declares an event-to-action binding, e.g. "on this event,
+     mutate that state" — declarative equivalent of an onclick handler,
+     without inline script. -->
+<!ELEMENT bind - O EMPTY>
+<!ATTLIST bind
+  %coreattrs;
+  event       CDATA          #REQUIRED -- e.g. click, change, submit --
+  state       CDATA          #REQUIRED -- state name to act on --
+  action      (set|increment|decrement|toggle|append|clear) #REQUIRED
+  value       CDATA          #IMPLIED  -- operand for set/append --
+  >
+
+<!-- rep: declaratively repeats its children once per item in a
+     state list (block-level equivalent of the wml-repeat attribute,
+     for cases needing multiple child elements per iteration) -->
+<!ELEMENT rep - - (%flow;)*>
+<!ATTLIST rep
+  %coreattrs;
+  source      CDATA          #REQUIRED -- state list name --
+  as          CDATA          #REQUIRED -- local item variable name --
+  >
+
+<!-- if / else: declarative conditional rendering blocks -->
+<!ELEMENT if - - (%flow;)*>
+<!ATTLIST if
+  %coreattrs;
+  condition   CDATA          #REQUIRED -- state name or expression --
+  >
+<!ELEMENT else - - (%flow;)*>
+<!ATTLIST else %coreattrs;>
+
+<!-- route: declares a client-side navigable route, mapping a path to
+     a wml source file, without any router script -->
+<!ELEMENT route - O EMPTY>
+<!ATTLIST route
+  %coreattrs;
+  path        CDATA          #REQUIRED -- e.g. /about --
+  src         %URI;          #REQUIRED -- wml file to load for this route --
+  >
+
+<!-- imp: imports another wml module/file into the current document,
+     analogous to an include, resolved at compile time -->
+<!ELEMENT imp - O EMPTY>
+<!ATTLIST imp
+  %coreattrs;
+  src         %URI;          #REQUIRED
+  as          CDATA          #IMPLIED  -- optional namespace alias --
+  >
+
+<!-- theme: declares design tokens (colors, spacing, fonts) at the
+     document level, consumable via var(--wml-token) style references,
+     without requiring an external stylesheet -->
+<!ELEMENT theme - O (tok)*>
+<!ATTLIST theme %coreattrs;>
+
+<!ELEMENT tok - O EMPTY>
+<!ATTLIST tok
+  %coreattrs;
+  name        CDATA          #REQUIRED
+  value       CDATA          #REQUIRED
+  >
+
+<!--=====================================================================
+    NEW IN wml ALPHA 2 "X-RAY"
+    ===================================================================== -->
+
+<!-- line: wml-native replacement for hr. a semantic horizontal divider,
+     with an optional weight for visual thickness instead of relying on
+     presentational CSS overrides. -->
+<!ELEMENT line - O EMPTY -- semantic divider, replaces hr -->
+<!ATTLIST line
+  %coreattrs;
+  %wmlattrs;
+  weight      (thin|medium|thick) medium -- visual weight of the divider --
+  >
+
+<!-- break: wml-native replacement for br. a forced line break. -->
+<!ELEMENT break - O EMPTY -- forced line break, replaces br -->
+<!ATTLIST break
+  %coreattrs;
+  >
+
+<!-- checkbox: a native checkbox form control. Can be bound directly to
+     a boolean state via wml-bind, so its checked state and a state
+     variable can stay in sync without script. -->
+<!ELEMENT checkbox - O EMPTY -- checkbox form control -->
+<!ATTLIST checkbox
+  %attrs;
+  name        CDATA          #REQUIRED -- form field name --
+  value       CDATA          #IMPLIED  -- value submitted when checked --
+  checked     (checked)      #IMPLIED  -- initial checked state --
+  disabled    (disabled)     #IMPLIED
+  tabindex    NUMBER         #IMPLIED
+  >
+
+<!--=====================================================================
+    Root element and doctype usage
+
+    <!DOCTYPE wml PUBLIC "-//WML//DTD WML Alpha 0.5//EN"
+        "wml-rules.dtd">
+    <wml version="0.5">
+      <head>
+        <title>...</title>
+      </head>
+      <body>...</body>
+    </wml>
+    ===================================================================== -->
+
+<!ELEMENT wml - - (head, body)>
+<!ATTLIST wml
+  version     CDATA          "0.5"
+  >
+
+<!ELEMENT head O O (%head.misc;)*>
+<!ATTLIST head %i18n;>
+
+<!-- title: new in Alpha 0.5. Document title, one per document. -->
+<!ELEMENT title - - (#PCDATA)>
+<!ATTLIST title %i18n;>
+
+<!-- meta: back in Alpha 0.5, with a real declaration. -->
+<!ELEMENT meta - O EMPTY -- generic metainformation -->
+<!ATTLIST meta
+  %i18n;
+  http-equiv  CDATA          #IMPLIED  -- HTTP response header name --
+  name        CDATA          #IMPLIED
+  content     CDATA          #REQUIRED
+  scheme      CDATA          #IMPLIED  -- select form of content --
+  charset     %Charset;      #IMPLIED
+  >
+
+<!-- link: back in Alpha 0.5, with a real declaration. -->
+<!ELEMENT link - O EMPTY -- a media-independent link -->
+<!ATTLIST link
+  %attrs;
+  charset     %Charset;      #IMPLIED
+  href        %URI;          #IMPLIED
+  hreflang    %LanguageCode; #IMPLIED
+  type        %ContentType;  #IMPLIED
+  rel         %LinkTypes;    #IMPLIED
+  rev         %LinkTypes;    #IMPLIED
+  media       %MediaDesc;    #IMPLIED
+  >
+
+<!-- stylesheet: back in Alpha 0.5, renamed from HTML's <style>. -->
+<!ELEMENT stylesheet - - (#PCDATA) -- embedded stylesheet content -->
+<!ATTLIST stylesheet
+  %i18n;
+  type        %ContentType;  #REQUIRED
+  media       %MediaDesc;    #IMPLIED
+  title       %Text;         #IMPLIED
+  >
+
+<!-- javascript: back in Alpha 0.5, renamed from HTML's <script>. -->
+<!ELEMENT javascript - - (#PCDATA) -- embedded or linked script -->
+<!ATTLIST javascript
+  type        %ContentType;  #REQUIRED
+  src         %URI;          #IMPLIED
+  defer       (defer)        #IMPLIED
+  >
+
+<!--=================== Tables (simplified WML table model) ===============
+     Alpha 0.5 reintroduces <table>, deliberately simplified compared to
+     HTML 4.01's full table model (no colgroup/col/thead/tfoot/tbody) —
+     just table, caption, tr, th, td.
+     ========================================================================-->
+
+<!ELEMENT table - - (caption?, tr+)>
+<!ATTLIST table
+  %attrs;
+  summary     %Text;         #IMPLIED
+  width       %Length;       #IMPLIED
+  border      %Pixels;       #IMPLIED
+  cellspacing %Length;       #IMPLIED
+  cellpadding %Length;       #IMPLIED
+  >
+
+<!ELEMENT caption - - (%inline;)*>
+<!ATTLIST caption %attrs;>
+
+<!ELEMENT tr - O (th|td)+>
+<!ATTLIST tr %attrs;>
+
+<!ELEMENT (th|td) - O (%flow;)*>
+<!ATTLIST (th|td)
+  %attrs;
+  colspan     NUMBER         "1"
+  rowspan     NUMBER         "1"
+  >

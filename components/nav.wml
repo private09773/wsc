@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  components/nav.wml
+  A WML COMPONENT module, pulled into home.wml via <IMPORT src="components/nav.wml" as="nav"/>
+-->
+<COMPONENT name="nav">
+  <DIV class="site-nav">
+    <SPAN class="site-nav__brand">WML Air</SPAN>
+    <A href="/">Home</A>
+    <A href="/about">About</A>
+    <A href="/book">Book</A>
+  </DIV>
+</COMPONENT>

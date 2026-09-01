@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE wml PUBLIC "-//WML//DTD WML Alpha 1 Whiskey//EN" "wml-rules.dtd">
+
+<!--
+  home.wml
+  Compiles to: index.html
+  This is the "main page" source file for a WML Alpha 1 "Whiskey" site.
+-->
+
+<wml version="Alpha 1" codename="Whiskey">
+
+  <HEAD>
+    <TITLE>Home &mdash; WML Demo</TITLE>
+    <META charset="UTF-8"/>
+
+    <!-- IMPORT: pulls in another WML module at compile time -->
+    <IMPORT src="components/nav.wml" as="nav"/>
+
+    <!-- THEME: document-level design tokens, no external CSS required -->
+    <THEME>
+      <TOKEN name="color-brand"  value="#274572"/>
+      <TOKEN name="color-accent" value="#c9973f"/>
+      <TOKEN name="font-base"    value="Inter, sans-serif"/>
+      <TOKEN name="space-md"     value="1.5rem"/>
+    </THEME>
+  </HEAD>
+
+  <BODY>
+
+    <!-- STATE: reactive page-local variables, no script authored -->
+    <STATE name="counter" type="number" value="0"/>
+    <STATE name="showTips" type="boolean" value="true"/>
+    <STATE name="flights" type="list" value="MNL-SIN,MNL-NRT,MNL-DXB"/>
+
+    <!-- COMPONENT: a reusable, named block -->
+    <COMPONENT name="flight-card">
+      <DIV class="flight-card">
+        <SLOT name="default">Unnamed route</SLOT>
+      </DIV>
+    </COMPONENT>
+
+    <USE component="nav"/>
+
+    <DIV class="hero">
+      <H1>Fly with WML Air</H1>
+      <P>A demo page compiled entirely from <CODE>home.wml</CODE>.</P>
+
+      <!-- IF / ELSE: declarative conditional rendering -->
+      <IF condition="showTips">
+        <P class="tip">Tip: click the counter below &mdash; no JavaScript was hand-written for this.</P>
+      </IF>
+      <ELSE>
+        <P class="tip">Tips are hidden.</P>
+      </ELSE>
+    </DIV>
+
+    <DIV class="counter-block">
+      <P>Clicked <SPAN wml-bind="counter">0</SPAN> times</P>
+      <BUTTON type="button">
+        Click me
+        <BIND event="click" state="counter" action="increment"/>
+      </BUTTON>
+      <BUTTON type="button">
+        Reset
+        <BIND event="click" state="counter" action="set" value="0"/>
+      </BUTTON>
+    </DIV>
+
+    <DIV class="route-list">
+      <H2>Popular routes</H2>
+      <!-- REPEAT: loops block content over a STATE list -->
+      <REPEAT source="flights" as="route">
+        <USE component="flight-card">
+          <SPAN wml-bind="route"></SPAN>
+        </USE>
+      </REPEAT>
+    </DIV>
+
+    <!-- ROUTE: declares client-side navigable routes, no router script -->
+    <ROUTE path="/" src="home.wml"/>
+    <ROUTE path="/about" src="about.wml"/>
+    <ROUTE path="/book" src="book.wml"/>
+
+  </BODY>
+
+</wml>
